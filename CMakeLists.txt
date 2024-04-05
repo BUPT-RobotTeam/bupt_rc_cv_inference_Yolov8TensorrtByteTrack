@@ -75,6 +75,8 @@ ament_target_dependencies(inference_publisher rclcpp bupt_rc_cv_interfaces)
 add_executable(inference_subscriber
     subscriber.cpp
 )
+
+target_link_libraries(inference_subscriber ${OpenCV_LIBS})
 ament_target_dependencies(inference_subscriber rclcpp bupt_rc_cv_interfaces)
 
 

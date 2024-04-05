@@ -109,7 +109,22 @@ private:
 
         // track
         output_stracks = tracker_ptr->update(objects);
+        img_draw = this->img;
         
+        for (int i = 0; i < output_stracks.size(); i++)
+        {
+
+            std::vector<float> tlwh = output_stracks[i].tlwh;
+
+            if (tlwh[2] * tlwh[3] > 20)
+            {
+                    cv::Scalar s = tracker_ptr->get_color(output_stracks[i].track_id);
+                    cv::putText(img_draw, cv::format("%d", output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+                    cv::putText(img_draw, cv::format("%.2f", output_stracks[i].score), cv::Point(tlwh[0] + tlwh[2] / 2, tlwh[1] - 5), 0, 0.6, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
+                    cv::putText(img_draw, (*name_map_ptr)["names"][output_stracks[i].label_id].as<std::string>(), cv::Point(tlwh[0] + tlwh[2] * 5 / 6, tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+                    cv::rectangle(img_draw, cv::Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
+            }
+        }
     }
 
     void timer_callback() {
@@ -121,20 +136,11 @@ private:
             msg.track_id = output_stracks[i].track_id;
             msg.score = output_stracks[i].score;
             message.inference_result.push_back(msg);
-
-            std::vector<float> tlwh = output_stracks[i].tlwh;
-
-            /*
-            if (tlwh[2] * tlwh[3] > 20)
-            {
-                    cv::Scalar s = tracker_ptr->get_color(output_stracks[i].track_id);
-                    cv::putText(img, cv::format("%d", output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
-                    cv::putText(img, cv::format("%.2f", output_stracks[i].score), cv::Point(tlwh[0] + tlwh[2] / 2, tlwh[1] - 5), 0, 0.6, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
-                    cv::putText(img, (*name_map_ptr)["names"][output_stracks[i].label_id].as<std::string>(), cv::Point(tlwh[0] + tlwh[2] * 5 / 6, tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
-    cv::rectangle(img, cv::Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
-            }
-            */
         }
+        
+        message.img.frame_width = img_draw.cols;
+        message.img.frame_height = img_draw.rows;
+        message.img.frame_data.assign(img_draw.data, img_draw.data + img_draw.total() * img_draw.elemSize());
 
         publisher_->publish(message);
 
@@ -149,6 +155,7 @@ private:
     std::vector<STrack> output_stracks;
 
     cv::Mat img;
+    cv::Mat img_draw;
 
 };
 int main(int argc, char* argv[]) {

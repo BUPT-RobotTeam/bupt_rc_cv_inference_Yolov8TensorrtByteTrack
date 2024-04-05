@@ -1,12 +1,20 @@
 #include "rclcpp/rclcpp.hpp"
 #include "bupt_rc_cv_interfaces/msg/cv_inference_array.hpp"
+#include "bupt_rc_cv_interfaces/msg/cv_frame.hpp"
 #include <termio.h>
 #include <unistd.h>
+#include <opencv2/opencv.hpp>
 
 class InferenceSubscriber : public rclcpp::Node {
 public:
     InferenceSubscriber() : Node("inference_subscriber") {
+        cv::namedWindow("inference", cv::WINDOW_NORMAL);
         subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 10, std::bind(&InferenceSubscriber::inferenceArrayCallback, this, std::placeholders::_1));
+    }
+
+    ~InferenceSubscriber() {
+        std::cout << "All windows has been destroyed" << std::endl;
+        cv::destroyAllWindows();
     }
 
     void spin(){
@@ -42,6 +50,7 @@ private:
     }
 
     void inferenceArrayCallback(const bupt_rc_cv_interfaces::msg::CVInferenceArray::SharedPtr msg) {
+        
         RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
         for (const auto& inference : msg->inference_result) {
             RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "track id: %d\n", inference.track_id);
@@ -50,6 +59,11 @@ private:
         RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "------------------------------------------------------------\n");
         }
         RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
+
+
+        cv::Mat frame(msg->img.frame_height, msg->img.frame_width, CV_8UC3, msg->img.frame_data.data());
+        cv::imshow("inference", frame);
+        cv::waitKey(1);
     }
 
 private:
