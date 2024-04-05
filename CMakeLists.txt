@@ -67,15 +67,25 @@ find_package(bupt_rc_cv_interfaces REQUIRED)
 add_executable(inference_publisher
     publisher.cpp
 )
-
 target_link_libraries(inference_publisher bytetrack yolo_infer)
 target_link_libraries(inference_publisher ${OpenCV_LIBS} yaml-cpp::yaml-cpp)
 ament_target_dependencies(inference_publisher rclcpp bupt_rc_cv_interfaces)
+
+# inference subscirber
+add_executable(inference_subscriber
+    subscriber.cpp
+)
+ament_target_dependencies(inference_subscriber rclcpp bupt_rc_cv_interfaces)
+
+
 
 install(TARGETS inference_publisher
     DESTINATION lib/${PROJECT_NAME}
 )
 
+install(TARGETS inference_subscriber
+    DESTINATION lib/${PROJECT_NAME}
+)
 
 install(TARGETS yolo_infer
     DESTINATION lib/${PROJECT_NAME}

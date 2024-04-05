@@ -10,6 +10,8 @@
 #include "BYTETracker.h"
 #include "rclcpp/rclcpp.hpp"
 #include "bupt_rc_cv_interfaces/msg/cv_cameras.hpp"
+#include "bupt_rc_cv_interfaces/msg/cv_inference.hpp"
+#include "bupt_rc_cv_interfaces/msg/cv_inference_array.hpp"
 #include <iostream>
 using namespace std;
 //------------------------------default configuration------------------------------
@@ -29,17 +31,24 @@ bool isTrackingClass(int class_id){
     }
     return false;
 }
+
 class InferenceAndTrack : public rclcpp::Node {
 public:
     InferenceAndTrack() : Node("inference") {
         std::cout << "Init Finish" << std::endl;
-        cv::namedWindow("img", cv::WINDOW_NORMAL);
-
+        cv::namedWindow("img", WINDOW_NORMAL);
+        // 订阅图片数据并推理
         subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVCameras>("bupt_rc_cv/cameras", 10, std::bind(&InferenceAndTrack::topic_callback, this, std::placeholders::_1));
+
+        // 发布推理结果
+        publisher_ = this->create_publisher<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 10);
+
+        timer_ = this->create_wall_timer(20ms, std::bind(&InferenceAndTrack::timer_callback, this));
+
     }
 
     ~InferenceAndTrack() {
-        std::cout << "All windows has been destroyed" << std::endl;
+        std::cout << "The program has safely exited" << std::endl;
         cv::destroyAllWindows();
     }
 
@@ -76,11 +85,13 @@ private:
     }
 
     void topic_callback(const bupt_rc_cv_interfaces::msg::CVCameras::SharedPtr msg) {
+
         // 获取数据
         this->img = cv::Mat(msg->frame_height, msg->frame_width, CV_8UC3, msg->frame_data.data());
 
         // yolo inference
         std::vector<DetectResult> res = detecter_ptr->inference(this->img);
+
         // yolo output format to bytetrack input format, and filter bbox by class id
         std::vector<Object> objects;
 
@@ -95,11 +106,25 @@ private:
                 objects.push_back(obj);
             }
         }
+
         // track
-        std::vector<STrack> output_stracks = tracker_ptr->update(objects);
+        output_stracks = tracker_ptr->update(objects);
+        
+    }
+
+    void timer_callback() {
+        auto message = bupt_rc_cv_interfaces::msg::CVInferenceArray();
         for (int i = 0; i < output_stracks.size(); i++)
         {
+            bupt_rc_cv_interfaces::msg::CVInference msg;
+            msg.tlwh = output_stracks[i].tlwh;
+            msg.track_id = output_stracks[i].track_id;
+            msg.score = output_stracks[i].score;
+            message.inference_result.push_back(msg);
+
             std::vector<float> tlwh = output_stracks[i].tlwh;
+
+            /*
             if (tlwh[2] * tlwh[3] > 20)
             {
                     cv::Scalar s = tracker_ptr->get_color(output_stracks[i].track_id);
@@ -108,13 +133,23 @@ private:
                     cv::putText(img, (*name_map_ptr)["names"][output_stracks[i].label_id].as<std::string>(), cv::Point(tlwh[0] + tlwh[2] * 5 / 6, tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
     cv::rectangle(img, cv::Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
             }
+            */
         }
-        cv::imshow("img", img);
-        cv::waitKey(1);
+
+        publisher_->publish(message);
+
     }
+
 private:
     rclcpp::Subscription<bupt_rc_cv_interfaces::msg::CVCameras>::SharedPtr subscription_;
+
+    rclcpp::Publisher<bupt_rc_cv_interfaces::msg::CVInferenceArray>::SharedPtr publisher_;
+    rclcpp::TimerBase::SharedPtr timer_;
+
+    std::vector<STrack> output_stracks;
+
     cv::Mat img;
+
 };
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
