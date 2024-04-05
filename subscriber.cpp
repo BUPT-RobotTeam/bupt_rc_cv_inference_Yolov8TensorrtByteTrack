@@ -9,7 +9,7 @@ class InferenceSubscriber : public rclcpp::Node {
 public:
     InferenceSubscriber() : Node("inference_subscriber") {
         cv::namedWindow("inference", cv::WINDOW_NORMAL);
-        subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 10, std::bind(&InferenceSubscriber::inferenceArrayCallback, this, std::placeholders::_1));
+        subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 1, std::bind(&InferenceSubscriber::inferenceArrayCallback, this, std::placeholders::_1));
     }
 
     ~InferenceSubscriber() {

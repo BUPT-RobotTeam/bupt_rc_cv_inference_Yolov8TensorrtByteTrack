@@ -38,12 +38,10 @@ public:
         std::cout << "Init Finish" << std::endl;
         cv::namedWindow("img", WINDOW_NORMAL);
         // 订阅图片数据并推理
-        subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVCameras>("bupt_rc_cv/cameras", 10, std::bind(&InferenceAndTrack::topic_callback, this, std::placeholders::_1));
+        subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVCameras>("bupt_rc_cv/cameras", 1, std::bind(&InferenceAndTrack::topic_callback, this, std::placeholders::_1));
 
         // 发布推理结果
-        publisher_ = this->create_publisher<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 10);
-
-        timer_ = this->create_wall_timer(20ms, std::bind(&InferenceAndTrack::timer_callback, this));
+        publisher_ = this->create_publisher<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 1);
 
     }
 
@@ -87,7 +85,7 @@ private:
     void topic_callback(const bupt_rc_cv_interfaces::msg::CVCameras::SharedPtr msg) {
 
         // 获取数据
-        this->img = cv::Mat(msg->frame_height, msg->frame_width, CV_8UC3, msg->frame_data.data());
+        this->img = cv::Mat(msg->img.frame_height, msg->img.frame_width, CV_8UC3, msg->img.frame_data.data());
 
         // yolo inference
         std::vector<DetectResult> res = detecter_ptr->inference(this->img);
@@ -108,43 +106,38 @@ private:
         }
 
         // track
-        output_stracks = tracker_ptr->update(objects);
-        img_draw = this->img;
+        auto output_stracks = tracker_ptr->update(objects);
+        auto message = bupt_rc_cv_interfaces::msg::CVInferenceArray();
         
         for (int i = 0; i < output_stracks.size(); i++)
         {
+
+            bupt_rc_cv_interfaces::msg::CVInference msg;
+            msg.tlwh = output_stracks[i].tlwh;
+            msg.track_id = output_stracks[i].track_id;
+            msg.score = output_stracks[i].score;
+            message.inference_result.push_back(msg);
 
             std::vector<float> tlwh = output_stracks[i].tlwh;
 
             if (tlwh[2] * tlwh[3] > 20)
             {
                     cv::Scalar s = tracker_ptr->get_color(output_stracks[i].track_id);
-                    cv::putText(img_draw, cv::format("%d", output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
-                    cv::putText(img_draw, cv::format("%.2f", output_stracks[i].score), cv::Point(tlwh[0] + tlwh[2] / 2, tlwh[1] - 5), 0, 0.6, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
-                    cv::putText(img_draw, (*name_map_ptr)["names"][output_stracks[i].label_id].as<std::string>(), cv::Point(tlwh[0] + tlwh[2] * 5 / 6, tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
-                    cv::rectangle(img_draw, cv::Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
+                    cv::putText(img, cv::format("%d", output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+                    cv::putText(img, cv::format("%.2f", output_stracks[i].score), cv::Point(tlwh[0] + tlwh[2] / 2, tlwh[1] - 5), 0, 0.6, cv::Scalar(255, 0, 0), 2, cv::LINE_AA);
+                    cv::putText(img, (*name_map_ptr)["names"][output_stracks[i].label_id].as<std::string>(), cv::Point(tlwh[0] + tlwh[2] * 5 / 6, tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+                    cv::rectangle(img, cv::Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
             }
         }
-    }
 
-    void timer_callback() {
-        auto message = bupt_rc_cv_interfaces::msg::CVInferenceArray();
-        for (int i = 0; i < output_stracks.size(); i++)
-        {
-            bupt_rc_cv_interfaces::msg::CVInference msg;
-            msg.tlwh = output_stracks[i].tlwh;
-            msg.track_id = output_stracks[i].track_id;
-            msg.score = output_stracks[i].score;
-            message.inference_result.push_back(msg);
-        }
-        
-        message.img.frame_width = img_draw.cols;
-        message.img.frame_height = img_draw.rows;
-        message.img.frame_data.assign(img_draw.data, img_draw.data + img_draw.total() * img_draw.elemSize());
+        message.img.frame_width = img.cols;
+        message.img.frame_height = img.rows;
+        message.img.frame_data.assign(img.data, img.data + img.total() * img.elemSize());
 
         publisher_->publish(message);
-
     }
+
+
 
 private:
     rclcpp::Subscription<bupt_rc_cv_interfaces::msg::CVCameras>::SharedPtr subscription_;
@@ -152,10 +145,7 @@ private:
     rclcpp::Publisher<bupt_rc_cv_interfaces::msg::CVInferenceArray>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
 
-    std::vector<STrack> output_stracks;
-
     cv::Mat img;
-    cv::Mat img_draw;
 
 };
 int main(int argc, char* argv[]) {
