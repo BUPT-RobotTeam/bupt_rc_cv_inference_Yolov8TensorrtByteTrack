@@ -1,0 +1,5 @@
+source;share/bupt_rc_cv_inference_Yolov8TensorrtBytetrack/local_setup.bash
+source;share/bupt_rc_cv_inference_Yolov8TensorrtBytetrack/local_setup.dsv
+source;share/bupt_rc_cv_inference_Yolov8TensorrtBytetrack/local_setup.ps1
+source;share/bupt_rc_cv_inference_Yolov8TensorrtBytetrack/local_setup.sh
+source;share/bupt_rc_cv_inference_Yolov8TensorrtBytetrack/local_setup.zsh

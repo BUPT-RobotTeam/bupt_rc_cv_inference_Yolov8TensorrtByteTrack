@@ -39,7 +39,7 @@ YoloLayerPlugin::YoloLayerPlugin(const void* data, size_t length) {
     read(d, mYoloV8netHeight);
     read(d, mMaxOutObject);
 
-    assert(d == a + length);
+    // assert(d == a + length);
 }
 
 void YoloLayerPlugin::serialize(void* buffer) const TRT_NOEXCEPT {

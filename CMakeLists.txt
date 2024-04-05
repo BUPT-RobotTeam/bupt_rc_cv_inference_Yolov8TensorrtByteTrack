@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(bupt_rc_cv_inference_Yolov8TensorrtBytetrack)
 
 add_definitions(-std=c++17)
 add_definitions(-DAPI_EXPORTS)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE release)
+set(CMAKE_BUILD_TYPE debug)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -67,6 +67,7 @@ find_package(bupt_rc_cv_interfaces REQUIRED)
 add_executable(inference_publisher
     publisher.cpp
 )
+
 target_link_libraries(inference_publisher bytetrack yolo_infer)
 target_link_libraries(inference_publisher ${OpenCV_LIBS} yaml-cpp::yaml-cpp)
 ament_target_dependencies(inference_publisher rclcpp bupt_rc_cv_interfaces)
@@ -74,6 +75,16 @@ ament_target_dependencies(inference_publisher rclcpp bupt_rc_cv_interfaces)
 install(TARGETS inference_publisher
     DESTINATION lib/${PROJECT_NAME}
 )
+
+
+install(TARGETS yolo_infer
+    DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS bytetrack
+    DESTINATION lib/${PROJECT_NAME}
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
