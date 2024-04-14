@@ -116,6 +116,7 @@ private:
             msg.tlwh = output_stracks[i].tlwh;
             msg.track_id = output_stracks[i].track_id;
             msg.score = output_stracks[i].score;
+            msg.label_id = output_stracks[i].label_id;
             message.inference_result.push_back(msg);
 
             std::vector<float> tlwh = output_stracks[i].tlwh;

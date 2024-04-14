@@ -54,6 +54,7 @@ private:
         RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
         for (const auto& inference : msg->inference_result) {
             RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "track id: %d\n", inference.track_id);
+            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "label id: %d\n", inference.label_id);
             RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "score: %f\n", inference.score);
             RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "tlwh: (%f, %f, %f, %f)\n", inference.tlwh[0], inference.tlwh[1], inference.tlwh[2], inference.tlwh[3]);
         RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "------------------------------------------------------------\n");
