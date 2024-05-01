@@ -8,7 +8,6 @@
 class InferenceSubscriber : public rclcpp::Node {
 public:
     InferenceSubscriber() : Node("inference_subscriber") {
-        cv::namedWindow("inference", cv::WINDOW_NORMAL);
         subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 1, std::bind(&InferenceSubscriber::inferenceArrayCallback, this, std::placeholders::_1));
     }
 
@@ -49,22 +48,26 @@ private:
         return FD_ISSET(STDIN_FILENO, &read_fd);
     }
 
-    void inferenceArrayCallback(const bupt_rc_cv_interfaces::msg::CVInferenceArray::SharedPtr msg) {
+    void inferenceArrayCallback(const bupt_rc_cv_interfaces::msg::CVInferenceArray::SharedPtr result_msg) {
         
-        RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
-        for (const auto& inference : msg->inference_result) {
-            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "track id: %d\n", inference.track_id);
-            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "label id: %d\n", inference.label_id);
-            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "score: %f\n", inference.score);
-            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "tlwh: (%f, %f, %f, %f)\n", inference.tlwh[0], inference.tlwh[1], inference.tlwh[2], inference.tlwh[3]);
-        RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "------------------------------------------------------------\n");
+        for (auto msg : result_msg->result) {
+
+            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
+            for (const auto& inference : msg.inference_result) {
+                RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "camera name    : %s\n", msg.cam_name.c_str()); 
+                RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "track id       : %d\n", inference.track_id);
+                RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "label id       : %d\n", inference.label_id);
+                RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "score          : %f\n", inference.score);
+                RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "tlwh           : (%f, %f, %f, %f)\n", inference.tlwh[0], inference.tlwh[1], inference.tlwh[2], inference.tlwh[3]);
+            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "------------------------------------------------------------\n");
+            }
+            RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
+
+
+            cv::Mat frame(msg.img.frame_height, msg.img.frame_width, CV_8UC3, msg.img.frame_data.data());
+            cv::imshow(msg.cam_name, frame);
+            cv::waitKey(1);
         }
-        RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
-
-
-        cv::Mat frame(msg->img.frame_height, msg->img.frame_width, CV_8UC3, msg->img.frame_data.data());
-        cv::imshow("inference", frame);
-        cv::waitKey(1);
     }
 
 private:
