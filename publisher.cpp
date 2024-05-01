@@ -199,6 +199,13 @@ private:
     void service_callback(const std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Request> request, const::std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Response> response) {
         this->is_inference_ball_ = request->cmaera_ball_inference_enable;
         this->is_inference_seedlings_ = request->camera_seedlings_inference_enable;
+        std::cout << "raw data: " << std::endl;
+        std::cout << "status of ball        : " << request->cmaera_ball_inference_enable << std::endl;
+        std::cout << "status of seedlings   : " << request->camera_seedlings_inference_enable << std::endl;
+
+        std::cout << "[get service]The status of two cameras has been changed" << std::endl;
+        std::cout << "inference ball        : " << (is_inference_ball_ ? "on" : "off") << std::endl;
+        std::cout << "inference seedlings   : " << (is_inference_seedlings_ ? "on" : "off") << std::endl;
         
         response->camera_ball_inference_status = this->is_inference_ball_;
         response->camera_seedlings_inference_status = this->is_inference_seedlings_;

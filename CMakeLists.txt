@@ -58,11 +58,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(bupt_rc_cv_interfaces REQUIRED)
 
-# ======== main execute file ========
-# add_executable(main ${PROJECT_SOURCE_DIR}/main.cpp)
-# target_link_libraries(main bytetrack yolo_infer)
-# target_link_libraries(main ${OpenCV_LIBS} yaml-cpp::yaml-cpp)
-
 # inference publisher
 add_executable(inference_publisher
     publisher.cpp
@@ -75,10 +70,14 @@ ament_target_dependencies(inference_publisher rclcpp bupt_rc_cv_interfaces)
 add_executable(inference_subscriber
     subscriber.cpp
 )
-
 target_link_libraries(inference_subscriber ${OpenCV_LIBS})
 ament_target_dependencies(inference_subscriber rclcpp bupt_rc_cv_interfaces)
 
+# inference service
+add_executable(inference_client
+    client.cpp
+)
+ament_target_dependencies(inference_client rclcpp bupt_rc_cv_interfaces)
 
 
 install(TARGETS inference_publisher
@@ -86,6 +85,10 @@ install(TARGETS inference_publisher
 )
 
 install(TARGETS inference_subscriber
+    DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS inference_client
     DESTINATION lib/${PROJECT_NAME}
 )
 
