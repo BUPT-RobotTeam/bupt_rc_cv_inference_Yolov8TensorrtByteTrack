@@ -21,6 +21,17 @@ int main(int argc, char* argv[]) {
         request->camera_seedlings_inference_enable = false;
     else 
         request->camera_seedlings_inference_enable = true;
+
+    if (std::atoll(argv[3]) == 0)
+        request->camera_ball_draw_img_enable = false;
+    else 
+        request->camera_ball_draw_img_enable = true;
+
+    if (std::atoll(argv[4]) == 0)
+        request->camera_seedlings_draw_img_enable = false;
+    else 
+        request->camera_seedlings_draw_img_enable = true;
+
     
     std::cout << "status of ball        : " << request->cmaera_ball_inference_enable << std::endl;
     std::cout << "status of seedlings   : " << request->camera_seedlings_inference_enable << std::endl;

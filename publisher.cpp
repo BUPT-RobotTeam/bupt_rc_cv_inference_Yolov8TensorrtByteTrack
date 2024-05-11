@@ -26,6 +26,7 @@ std::map<std::string, std::vector<int>> cam_track_classes {
     {"camera_ball", {0, 1, 2}},                         // ball_blue, ball_red, ball_purple
     {"camera_seedlings", {3, 4}},                       // seedlings_blue, seedlings_red
 };
+
 std::shared_ptr<YAML::Node> name_map_ptr = std::make_shared<YAML::Node>(YAML::LoadFile(map_yaml_path));
 std::shared_ptr<YoloDetecter> cam_ball_detecter_ptr = std::make_shared<YoloDetecter>(cam_ball_engine_path);
 std::shared_ptr<YoloDetecter> cam_seedlings_detecter_ptr = std::make_shared<YoloDetecter>(cam_seedlings_engine_path);
@@ -45,6 +46,8 @@ public:
     InferenceAndTrack() : Node("bupt_rc_cv_inference_and_track") {
         this->is_inference_ball_ = true;
         this->is_inference_seedlings_ = false;
+        this->is_draw_ball_ = false;
+        this->is_draw_seedlings_ = false;
         this->subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVCameraArray>("bupt_rc_cv/cameras", 1, std::bind(&InferenceAndTrack::topic_callback, this, std::placeholders::_1));
         this->service_ = this->create_service<bupt_rc_cv_interfaces::srv::CVInferenceSwitch>("bupt_rc_cv/inference/switch", std::bind(&InferenceAndTrack::service_callback, this, std::placeholders::_1, std::placeholders::_2));
         this->publisher_ = this->create_publisher<bupt_rc_cv_interfaces::msg::CVInferenceArray>("bupt_rc_cv/inference/result", 1);
@@ -125,7 +128,7 @@ private:
                         message_ball.inference_result.push_back(msg);
                         std::vector<float> tlwh = output_stracks[i].tlwh;
 
-                        if (tlwh[2] * tlwh[3] > 20)
+                        if ((tlwh[2] * tlwh[3] > 20) && this->is_draw_ball_)
                         {
                                 cv::Scalar s = cam_ball_tracker_ptr->get_color(output_stracks[i].track_id);
                                 cv::putText(this->img_ball_, cv::format("%d", output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
@@ -173,7 +176,7 @@ private:
                         message_seedlings.inference_result.push_back(msg);
                         std::vector<float> tlwh = output_stracks[i].tlwh;
 
-                        if (tlwh[2] * tlwh[3] > 20)
+                        if ((tlwh[2] * tlwh[3] > 20) && this->is_draw_seedlings_)
                         {
                                 cv::Scalar s = cam_ball_tracker_ptr->get_color(output_stracks[i].track_id);
                                 cv::putText(this->img_seedlings_, cv::format("%d", output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5), 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
@@ -199,16 +202,26 @@ private:
     void service_callback(const std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Request> request, const::std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Response> response) {
         this->is_inference_ball_ = request->cmaera_ball_inference_enable;
         this->is_inference_seedlings_ = request->camera_seedlings_inference_enable;
+        this->is_draw_ball_ = request->camera_ball_draw_img_enable;
+        this->is_draw_seedlings_ = request->camera_seedlings_inference_enable;
+
         std::cout << "raw data: " << std::endl;
-        std::cout << "status of ball        : " << request->cmaera_ball_inference_enable << std::endl;
-        std::cout << "status of seedlings   : " << request->camera_seedlings_inference_enable << std::endl;
+        std::cout << "[inference]status of ball        : " << request->cmaera_ball_inference_enable << std::endl;
+        std::cout << "[inference]status of seedlings   : " << request->camera_seedlings_inference_enable << std::endl;
+        std::cout << "[draw]status of ball             : " << request->camera_ball_draw_img_enable << std::endl;
+        std::cout << "[draw]status of seedlings        : " << request->camera_seedlings_draw_img_enable << std::endl;
+
 
         std::cout << "[get service]The status of two cameras has been changed" << std::endl;
-        std::cout << "inference ball        : " << (is_inference_ball_ ? "on" : "off") << std::endl;
-        std::cout << "inference seedlings   : " << (is_inference_seedlings_ ? "on" : "off") << std::endl;
+        std::cout << "[inference]ball        : " << (is_inference_ball_ ? "on" : "off") << std::endl;
+        std::cout << "[inference]seedlings   : " << (is_inference_seedlings_ ? "on" : "off") << std::endl;
+        std::cout << "[draw]ball             : " << (is_draw_ball_ ? "on" : "off") << std::endl;
+        std::cout << "[draw]seedlings        : " << (is_draw_seedlings_ ? "on" : "off") << std::endl;
         
         response->camera_ball_inference_status = this->is_inference_ball_;
         response->camera_seedlings_inference_status = this->is_inference_seedlings_;
+        response->camera_ball_draw_img_status = this->is_draw_ball_;
+        response->camera_seedlings_draw_img_status = this->is_draw_seedlings_;
     }
 
 private:
@@ -217,6 +230,8 @@ private:
     rclcpp::Service<bupt_rc_cv_interfaces::srv::CVInferenceSwitch>::SharedPtr service_;
     bool is_inference_ball_;
     bool is_inference_seedlings_;
+    bool is_draw_ball_;
+    bool is_draw_seedlings_;
     cv::Mat img_ball_;
     cv::Mat img_seedlings_;
 };

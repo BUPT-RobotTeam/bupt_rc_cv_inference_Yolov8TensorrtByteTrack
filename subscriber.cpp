@@ -64,6 +64,7 @@ private:
             RCLCPP_INFO(rclcpp::get_logger("inference_subscriber"), "============================================================\n");
 
 
+            std::cout << msg.img.frame_height << " and " << msg.img.frame_width << std::endl;
             cv::Mat frame(msg.img.frame_height, msg.img.frame_width, CV_8UC3, msg.img.frame_data.data());
             cv::imshow(msg.cam_name, frame);
             cv::waitKey(1);

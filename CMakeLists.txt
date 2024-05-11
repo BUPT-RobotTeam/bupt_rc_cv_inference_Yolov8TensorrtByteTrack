@@ -73,6 +73,13 @@ add_executable(inference_subscriber
 target_link_libraries(inference_subscriber ${OpenCV_LIBS})
 ament_target_dependencies(inference_subscriber rclcpp bupt_rc_cv_interfaces)
 
+# tarcker
+add_executable(inference_tracker
+    tracker.cpp
+)
+target_link_libraries(inference_tracker ${OpenCV_LIBS})
+ament_target_dependencies(inference_tracker rclcpp bupt_rc_cv_interfaces)
+
 # inference service
 add_executable(inference_client
     client.cpp
@@ -85,6 +92,10 @@ install(TARGETS inference_publisher
 )
 
 install(TARGETS inference_subscriber
+    DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS inference_tracker
     DESTINATION lib/${PROJECT_NAME}
 )
 
