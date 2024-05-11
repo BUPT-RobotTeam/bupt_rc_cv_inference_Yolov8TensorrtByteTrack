@@ -17,8 +17,8 @@
 #include <iostream>
 
 //------------------------------default configuration------------------------------
-std::string cam_ball_engine_path = "/home/bupt-rc/Code/yolo/module/engine_module/s_e_200_031201.engine";
-std::string cam_seedlings_engine_path = "/home/bupt-rc/Code/yolo/module/engine_module/s_e_200_031201.engine";
+std::string cam_ball_engine_path = "/home/bupt-rc/Code/yolo/module/engine_module/2024_0508_01_s_camera_ball.engine";
+std::string cam_seedlings_engine_path = "/home/bupt-rc/Code/yolo/module/engine_module/2024_0508_01_s_camera_ball.engine";
 
 std::string map_yaml_path = "/home/bupt-rc/ros2_ws/bupt_rc_cv_ws/src/bupt_rc_cv_inference_Yolov8TensorrtBytetrack/name-map/rc.yaml";
 
@@ -46,7 +46,7 @@ public:
     InferenceAndTrack() : Node("bupt_rc_cv_inference_and_track") {
         this->is_inference_ball_ = true;
         this->is_inference_seedlings_ = false;
-        this->is_draw_ball_ = false;
+        this->is_draw_ball_ = true;
         this->is_draw_seedlings_ = false;
         this->subscription_ = this->create_subscription<bupt_rc_cv_interfaces::msg::CVCameraArray>("bupt_rc_cv/cameras", 1, std::bind(&InferenceAndTrack::topic_callback, this, std::placeholders::_1));
         this->service_ = this->create_service<bupt_rc_cv_interfaces::srv::CVInferenceSwitch>("bupt_rc_cv/inference/switch", std::bind(&InferenceAndTrack::service_callback, this, std::placeholders::_1, std::placeholders::_2));
@@ -199,7 +199,7 @@ private:
         this->publisher_->publish(all_result);
     }
 
-    void service_callback(const std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Request> request, const::std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Response> response) {
+    void service_callback(const std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Request> request, const std::shared_ptr<bupt_rc_cv_interfaces::srv::CVInferenceSwitch::Response> response) {
         this->is_inference_ball_ = request->cmaera_ball_inference_enable;
         this->is_inference_seedlings_ = request->camera_seedlings_inference_enable;
         this->is_draw_ball_ = request->camera_ball_draw_img_enable;
